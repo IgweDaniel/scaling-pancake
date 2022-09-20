@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      // Your custom aliases here
+      "@/*": ["./src/*"]
+    }
+  }
+}
