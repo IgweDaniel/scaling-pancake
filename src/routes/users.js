@@ -29,7 +29,7 @@ route.get(
 
     if (req.user.role === Roles.INSTRUCTOR) {
       filter.role = Roles.STUDENT;
-      filter.classId = req.user.classId;
+      filter.class = req.user.classId;
     }
 
     const users = await UserService.listUsers(filter);

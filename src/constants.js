@@ -1,7 +1,7 @@
 export const Roles = {
   ADMIN: "ADMIN",
   INSTRUCTOR: "INSTRUCTOR",
-  STUDENT: "student",
+  STUDENT: "STUDENT",
 };
 
 export const TokenTypes = {

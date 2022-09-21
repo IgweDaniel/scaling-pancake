@@ -47,7 +47,7 @@ const userSchema = new Schema(
 const User = mongoose.model("Users", userSchema);
 
 const Student = User.discriminator(
-  "Student",
+  Roles.STUDENT,
   new mongoose.Schema(
     {
       role: {
@@ -74,7 +74,7 @@ const Student = User.discriminator(
 );
 
 const Instructor = User.discriminator(
-  "Instructor",
+  Roles.INSTRUCTOR,
   new mongoose.Schema(
     {
       role: {
