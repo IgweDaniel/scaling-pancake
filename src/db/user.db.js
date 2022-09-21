@@ -14,6 +14,7 @@ const userSchema = new Schema(
       required: true,
       default: Roles.ADMIN,
     },
+
     email: {
       type: String,
       match: /^\S+@\S+\.\S+$/,
@@ -21,6 +22,10 @@ const userSchema = new Schema(
       unique: true,
       trim: true,
       lowercase: true,
+    },
+    class: {
+      type: Schema.Types.ObjectId,
+      ref: "Classes",
     },
     password: {
       type: String,
@@ -51,10 +56,20 @@ const Student = User.discriminator(
         default: Roles.STUDENT,
         enum: Roles.STUDENT,
       },
+      class: {
+        type: Schema.Types.ObjectId,
+        ref: "Classes",
+        required: true,
+      },
       DOB: { type: Date, required: true },
       fullName: { type: String, required: true },
     },
-    { discriminatorKey }
+    { discriminatorKey },
+    {
+      toJSON: {
+        virtuals: true,
+      },
+    }
   )
 );
 
@@ -67,8 +82,18 @@ const Instructor = User.discriminator(
         required: true,
         default: Roles.INSTRUCTOR,
       },
+      class: {
+        type: Schema.Types.ObjectId,
+        ref: "Classes",
+        required: true,
+      },
     },
-    { discriminatorKey }
+    { discriminatorKey },
+    {
+      toJSON: {
+        virtuals: true,
+      },
+    }
   )
 );
 

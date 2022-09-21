@@ -20,7 +20,8 @@ class AuthService {
     }
     const payload = {
       id: user.id,
-      roles: user.roles,
+      role: user.role,
+      classId: user.class,
     };
 
     const token = await this.signToken(payload);
@@ -69,7 +70,8 @@ class AuthService {
       const payload = jwt.verify(token, config.refreshSecret);
       return {
         id: payload.id,
-        roles: payload.roles,
+        role: payload.role,
+        classId: payload.classId,
       };
     } catch (error) {
       throw new ErrorHandler(500, error.message);

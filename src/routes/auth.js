@@ -4,6 +4,12 @@ import { ErrorHandler } from "@/helpers/error";
 import { body, param, validationResult } from "express-validator";
 import { AuthService, MailService } from "@/services/";
 
+const cookieConfig = {
+  httpOnly: true,
+  sameSite: process.env.NODE_ENV === "production" ? "none" : true,
+  secure: process.env.NODE_ENV === "production" ? true : false,
+};
+
 route.post(
   "/",
   body("loginId").isString(),
@@ -16,15 +22,18 @@ route.post(
 
     const { token, refreshToken, user } = await AuthService.login(req.body);
     res.header("auth-token", token);
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      sameSite: process.env.NODE_ENV === "development" ? true : "none",
-      secure: process.env.NODE_ENV === "development" ? false : true,
-    });
+    res.cookie("refreshToken", refreshToken, cookieConfig);
 
     return res.status(200).json({ token, refreshToken, user });
   }
 );
+
+route.delete("/", async (req, res) => {
+  if (req.cookies.refreshToken) {
+    res.clearCookie("refreshToken");
+  }
+  return res.status(200).json({});
+});
 
 route.post(
   "/password-rest",
@@ -62,4 +71,19 @@ route.post(
     return res.status(200).json({});
   }
 );
+
+route.get("/refresh", async (req, res) => {
+  if (!req.cookies.refreshToken) {
+    throw new ErrorHandler(401, "Token missing");
+  }
+
+  const { token, refreshToken } = await AuthService.generateRefreshToken(
+    req.cookies.refreshToken
+  );
+  res.header("auth-token", token);
+  res.cookie("refreshToken", refreshToken, cookieConfig);
+
+  return res.status(200).json({ token, refreshToken });
+});
+
 export default route;

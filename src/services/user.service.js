@@ -47,6 +47,11 @@ class UserService {
       throw new ErrorHandler(404, "user not found");
     }
   }
+
+  async listUsers(filter) {
+    const users = await User.find({ ...filter });
+    return users;
+  }
 }
 
 export default new UserService();

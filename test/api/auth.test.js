@@ -1,7 +1,7 @@
 const request = require("supertest");
 import loaders from "@/loaders";
 import config from "@/config";
-import { User, Student, Instructor, Token } from "@/db";
+import { User, Token, Class } from "@/db";
 import { Roles } from "@/constants";
 import hashPassword from "@/helpers/hashPassword";
 import { MailService } from "@/services";
@@ -10,20 +10,26 @@ import bcrypt from "bcryptjs";
 
 const apiRoot = `${config.api.prefix}/auth`;
 const { app } = loaders({});
-const agent = request.agent(app);
 
 const creds = {
   loginId: "d@ad.com",
   password: "mypassword",
 };
+let agent;
 let testUser;
 const spyMailService = jest.spyOn(MailService, "forgotPasswordMail");
 
 beforeEach(async () => {
+  agent = request.agent(app);
+  const userClass = await Class.create({
+    name: "jssq",
+    code: 403,
+  });
   testUser = await User.create({
     ...creds,
     email: "me@mail.com",
     role: Roles.ADMIN,
+    class: userClass,
     password: hashPassword(creds.password),
   });
 });
@@ -31,6 +37,7 @@ beforeEach(async () => {
 afterEach(async () => {
   spyMailService.mockReset();
 });
+
 test("POST /auth 200 ", async () => {
   const { status, body, headers } = await agent.post(apiRoot).send(creds);
 
@@ -39,9 +46,7 @@ test("POST /auth 200 ", async () => {
   expect(body.user.id).toBe(testUser.id);
 
   expect(headers["auth-token"]).toBe(body.token);
-  expect(headers["set-cookie"]).toContain(
-    `refreshToken=${body.refreshToken}; Path=/; HttpOnly; Secure; SameSite=None`
-  );
+  expect(headers["set-cookie"].join()).toMatch(new RegExp(body.refreshToken));
 });
 
 test("POST /auth 401 <bad input>", async () => {
@@ -74,6 +79,39 @@ test("POST /auth 401 <invalid credentials>", async () => {
 
   expect(body.status).toBe("error");
   expect(body.message).toBe("invalid user creds");
+});
+
+test("GET /refresh 200 ", async () => {
+  await agent.post(apiRoot).send(creds);
+  const { status, headers, body } = await agent.get(`${apiRoot}/refresh`);
+  expect(status).toBe(200);
+
+  expect(headers["auth-token"]).toBe(body.token);
+
+  expect(headers["set-cookie"].join()).toMatch(new RegExp(body.refreshToken));
+});
+
+test("GET /refresh 401 ", async () => {
+  const { status, headers, body } = await agent.get(`${apiRoot}/refresh`);
+  expect(status).toBe(401);
+
+  expect(body.token).toBeFalsy();
+  expect(headers["auth-token"]).toBeFalsy();
+});
+
+test("DELETE / 200 (Logout)", async () => {
+  let res;
+  await agent.post(apiRoot).send(creds);
+
+  res = await agent.delete(apiRoot);
+  expect(res.status).toBe(200);
+
+  res = await agent.get(`${apiRoot}/refresh`);
+
+  expect(res.status).toBe(401);
+  expect(res.body.token).toBeFalsy();
+  expect(res.headers["auth-token"]).toBeFalsy();
+  expect(res.headers["set-cookie"]).toBeFalsy();
 });
 
 test("POST /password-rest 200", async () => {
