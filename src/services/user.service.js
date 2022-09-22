@@ -18,6 +18,16 @@ class UserService {
       return student;
     } catch (error) {}
   }
+
+  async createUser({ role, password, classId, ...rest }) {
+    return User.create({
+      ...rest,
+      kind: role,
+      class: classId,
+      password: hashPassword(password),
+    });
+  }
+
   async createInstructor({ email, classId, password }) {
     try {
       const instructor = await Instructor.create({
@@ -30,17 +40,15 @@ class UserService {
       return instructor;
     } catch (error) {}
   }
+
   async getUserByLoginID(loginId) {
-    try {
-      const user = await User.findOne({ loginId });
-      if (!user) {
-        throw new ErrorHandler(404, "user not found");
-      }
-      return user;
-    } catch (error) {
-      // throw new ErrorHandler(404, error.message);
+    const user = await User.findOne({ loginId });
+    if (!user) {
+      throw new ErrorHandler(404, "user not found");
     }
+    return user;
   }
+
   async updateUser(id, { email, password }) {
     const user = await User.findById(id);
     if (!user) {

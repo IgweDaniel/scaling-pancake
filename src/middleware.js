@@ -19,15 +19,17 @@ export const verifyToken = (req, res, next) => {
   }
 };
 
-export const isAdmin = (req, res, next) => {
-  const { role } = req.user;
-  if (role && [Roles.INSTRUCTOR, Roles.ADMIN].includes(role)) {
-    req.user = {
-      ...req.user,
-      role,
-    };
-    return next();
-  } else {
-    throw new ErrorHandler(401, "require admin role");
-  }
+export const hasRoles = (roles) => {
+  return (req, res, next) => {
+    const { role } = req.user;
+    if (role && roles.includes(role)) {
+      req.user = {
+        ...req.user,
+        role,
+      };
+      return next();
+    } else {
+      throw new ErrorHandler(401, "require admin role");
+    }
+  };
 };
