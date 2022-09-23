@@ -10,6 +10,7 @@ export const verifyToken = (req, res, next) => {
 
   try {
     const verified = jwt.verify(token, process.env.SECRET);
+
     req.user = verified;
 
     next();
@@ -18,10 +19,10 @@ export const verifyToken = (req, res, next) => {
   }
 };
 
-export const hasRoles = (roles) => {
-  return (req, res, next) => {
-    const { role } = req.user;
-    if (role && roles.includes(role)) {
+export const hasRoles = (allowedRoles) => {
+  return (req, _, next) => {
+    const role = req.user?.role;
+    if (role && allowedRoles.includes(role)) {
       req.user = {
         ...req.user,
         role,

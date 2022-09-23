@@ -6,7 +6,7 @@ import { body, checkSchema, validationResult } from "express-validator";
 export const validateClassId = () => {
   return body("classId").custom((value) => {
     return Class.findById(value).then(($class) => {
-      if ($class) {
+      if (!$class) {
         return Promise.reject("Invalid classId");
       }
     });

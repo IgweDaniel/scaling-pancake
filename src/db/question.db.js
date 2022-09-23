@@ -6,9 +6,9 @@ const discriminatorKey = "kind";
 
 const questionSchema = new Schema(
   {
-    examId: {
+    quiz: {
       type: Schema.Types.ObjectId,
-      ref: "Exams",
+      ref: "Quizes",
       required: true,
     },
     creator: {

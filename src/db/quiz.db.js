@@ -2,14 +2,14 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
-const examSchema = new Schema(
+const quizSchema = new Schema(
   {
-    instructor: {
+    createdBy: {
       type: Schema.Types.ObjectId,
       ref: "Users",
       required: true,
     },
-    classId: {
+    class: {
       type: Schema.Types.ObjectId,
       ref: "Classes",
       required: true,
@@ -27,6 +27,6 @@ const examSchema = new Schema(
     },
   }
 );
-const Exam = mongoose.model("Exams", examSchema);
+const Quiz = mongoose.model("Quizes", quizSchema);
 
-export { Exam };
+export { Quiz };
