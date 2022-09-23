@@ -24,8 +24,8 @@ class AuthService {
       classId: user.class,
     };
 
-    const token = await this.signToken(payload);
-    const refreshToken = await this.signRefreshToken(payload);
+    const token = this.signToken(payload);
+    const refreshToken = this.signRefreshToken(payload);
 
     return {
       token,
@@ -38,11 +38,11 @@ class AuthService {
     };
   }
 
-  async generateRefreshToken(data) {
-    const payload = await this.verifyRefreshToken(data);
+  generateRefreshToken(data) {
+    const payload = this.verifyRefreshToken(data);
 
-    const token = await this.signToken(payload);
-    const refreshToken = await this.signRefreshToken(payload);
+    const token = this.signToken(payload);
+    const refreshToken = this.signRefreshToken(payload);
 
     return {
       token,
@@ -53,7 +53,6 @@ class AuthService {
     try {
       return jwt.sign(data, config.refreshSecret, { expiresIn: "1h" });
     } catch (error) {
-      logger.error(error);
       throw new ErrorHandler(500, error.message);
     }
   }
@@ -65,7 +64,7 @@ class AuthService {
     }
   }
 
-  async verifyRefreshToken(token) {
+  verifyRefreshToken(token) {
     try {
       const payload = jwt.verify(token, config.refreshSecret);
       return {

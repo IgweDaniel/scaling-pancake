@@ -61,10 +61,22 @@ test("POST /auth 401 <bad input>", async () => {
   expect(headers["auth-token"]).toBeFalsy();
 });
 
-test("POST /auth 401 <invalid credentials>", async () => {
+test("POST /auth 401 <invalid password>", async () => {
   const { status, body, headers } = await agent
     .post(apiRoot)
     .send({ ...creds, password: "wrongpassword" });
+
+  expect(status).toBe(401);
+  expect(body.error).toBe("invalid user creds");
+
+  expect(headers["set-cookie"]).toBeFalsy();
+  expect(headers["auth-token"]).toBeFalsy();
+});
+
+test("POST /auth 401 <invalid loginId>", async () => {
+  const { status, body, headers } = await agent
+    .post(apiRoot)
+    .send({ ...creds, loginId: "invalid_loginId" });
 
   expect(status).toBe(401);
   expect(body.error).toBe("invalid user creds");
@@ -94,6 +106,20 @@ test("GET /refresh 401 ", async () => {
 test("DELETE / 200 (Logout)", async () => {
   let res;
   await agent.post(apiRoot).send(creds);
+
+  res = await agent.delete(apiRoot);
+  expect(res.status).toBe(200);
+
+  res = await agent.get(`${apiRoot}/refresh`);
+
+  expect(res.status).toBe(401);
+  expect(res.body.token).toBeFalsy();
+  expect(res.headers["auth-token"]).toBeFalsy();
+  expect(res.headers["set-cookie"]).toBeFalsy();
+});
+
+test("DELETE / 200 (Unauthenticated Logout)", async () => {
+  let res;
 
   res = await agent.delete(apiRoot);
   expect(res.status).toBe(200);

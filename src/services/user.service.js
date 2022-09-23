@@ -30,8 +30,7 @@ class UserService {
   }
 
   async listUsers(filter) {
-    const users = await User.find({ ...filter });
-    return users;
+    return User.find({ ...filter });
   }
 }
 

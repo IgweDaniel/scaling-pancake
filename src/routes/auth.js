@@ -37,9 +37,10 @@ route.post(
   body("email").isEmail(),
   validateInputs,
   async (req, res) => {
-    const restLink = await AuthService.passwordResetLink(req.body.email);
+    const email = req.body.email;
+    const resetLink = await AuthService.passwordResetLink(email);
 
-    await MailService.forgotPasswordMail(restLink);
+    await MailService.forgotPasswordMail(resetLink, email);
 
     return res.status(200).json({});
   }
@@ -65,7 +66,7 @@ route.get("/refresh", async (req, res) => {
     throw new ErrorHandler(401, "Token missing");
   }
 
-  const { token, refreshToken } = await AuthService.generateRefreshToken(
+  const { token, refreshToken } = AuthService.generateRefreshToken(
     req.cookies.refreshToken
   );
   res.header("auth-token", token);

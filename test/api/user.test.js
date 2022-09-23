@@ -12,11 +12,14 @@ const { app } = loaders({});
 let agent;
 const apiRoot = `${config.api.prefix}/users`;
 
-let tokens, accounts;
+let tokens, accounts, testClass;
 
 beforeEach(async () => {
   agent = request.agent(app);
-
+  testClass = await Class.create({
+    name: "JSS2",
+    code: 401,
+  });
   accounts = await setupAccounts();
   tokens = createAccountTokens(accounts);
 });
@@ -70,12 +73,12 @@ test("GET /users 200 (admin acess) with role filter <Bad Input>", async () => {
   expect(status).toBe(401);
 });
 
-test("POST /users/ INSTRUCTOR creation as admin 200 ", async () => {
+test("POST /users/ 200 INSTRUCTOR creation as admin  ", async () => {
   const input = {
     email: "testEmail@mail.com",
     loginId: "testEmail@mail.com",
     password: "password",
-    classId: new mongoose.Types.ObjectId(),
+    classId: testClass.id,
     role: Roles.INSTRUCTOR,
   };
 
@@ -89,8 +92,8 @@ test("POST /users/ INSTRUCTOR creation as admin 200 ", async () => {
   expect(body.user.loginId).toBe(input.loginId);
 });
 
-test("POST /users/ 401 student creation no DOB or FULLNAME  as admin <Bad input>", async () => {
-  const { status } = await agent
+test("POST /users/ 401 student creation no DOB, fullName and invalid classId as admin <Bad input>", async () => {
+  const { status, body } = await agent
     .post(`${apiRoot}/`)
     .send({
       email: "testEmail@mail.com",
@@ -102,13 +105,16 @@ test("POST /users/ 401 student creation no DOB or FULLNAME  as admin <Bad input>
     .set("auth-token", tokens.admin);
 
   expect(status).toBe(401);
+  expect(body.error).toHaveProperty("fullName");
+  expect(body.error).toHaveProperty("classId");
+  expect(body.error).toHaveProperty("DOB");
 });
 
 test("POST /users/ 200 student creation admin ", async () => {
   const input = {
     email: "testEmail@mail.com",
     password: "password",
-    classId: new mongoose.Types.ObjectId(),
+    classId: testClass.id,
     fullName: "emiladekuti",
     DOB: new Date(),
     role: Roles.STUDENT,

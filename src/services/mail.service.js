@@ -5,8 +5,8 @@ import { User, Token } from "@/db";
 import config from "@/config";
 
 class MailService {
-  forgotPasswordMail(link) {
-    return true;
+  async forgotPasswordMail(link, email) {
+    console.log(`Email sent to ${email} with ${link} `);
   }
 }
 
