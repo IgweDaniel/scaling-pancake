@@ -1,6 +1,5 @@
 import jwt from "jsonwebtoken";
 import { ErrorHandler } from "@/helpers/error";
-import { Roles } from "./constants";
 
 export const verifyToken = (req, res, next) => {
   const token = req.header("auth-token");

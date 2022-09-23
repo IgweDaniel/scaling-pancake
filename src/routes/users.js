@@ -3,9 +3,9 @@ const route = Router();
 import { ErrorHandler } from "@/helpers/error";
 import { body, param, validationResult, query } from "express-validator";
 import { AuthService, MailService, UserService } from "@/services/";
-import { hasRoles, verifyToken } from "@/middleware";
+import { hasRoles, verifyToken } from "@/middleware/auth";
 import { Roles } from "@/constants";
-import { validateClassId, validateUser } from "@/helpers/validators";
+import { validateClassId, validateUser } from "@/middleware/validators";
 
 route.use(verifyToken);
 route.get(
