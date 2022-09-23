@@ -55,16 +55,10 @@ test("POST /auth 401 <bad input>", async () => {
     .send({ username: creds.username, password: "wrongpassword" });
 
   expect(status).toBe(401);
+  expect(body.error).toHaveProperty("loginId");
 
   expect(headers["set-cookie"]).toBeFalsy();
   expect(headers["auth-token"]).toBeFalsy();
-
-  expect(body.status).toBe("error");
-  expect(body.message).toContainEqual({
-    msg: "Invalid value",
-    param: "loginId",
-    location: "body",
-  });
 });
 
 test("POST /auth 401 <invalid credentials>", async () => {
@@ -73,12 +67,10 @@ test("POST /auth 401 <invalid credentials>", async () => {
     .send({ ...creds, password: "wrongpassword" });
 
   expect(status).toBe(401);
+  expect(body.error).toBe("invalid user creds");
 
   expect(headers["set-cookie"]).toBeFalsy();
   expect(headers["auth-token"]).toBeFalsy();
-
-  expect(body.status).toBe("error");
-  expect(body.message).toBe("invalid user creds");
 });
 
 test("GET /refresh 200 ", async () => {
@@ -123,31 +115,25 @@ test("POST /password-rest 200", async () => {
   expect(status).toBe(200);
 });
 
-test("POST /password-rest 400 <Bad Input>", async () => {
+test("POST /password-rest 400 <Bad Input:Invalid Email>", async () => {
   const { status, body } = await agent
     .post(`${apiRoot}/password-rest`)
     .send({ email: "not a proper email" });
 
   expect(status).toBe(401);
+  expect(body.error).toHaveProperty("email");
   expect(spyMailService).toHaveBeenCalledTimes(0);
-  expect(body.status).toBe("error");
-  expect(body.message).toContainEqual({
-    location: "body",
-    msg: "Invalid value",
-    param: "email",
-    value: "not a proper email",
-  });
 });
 
-test("POST /password-rest 400 <Invalid email>", async () => {
+test("POST /password-rest 400 <Nonexistent valid email>", async () => {
   const { status, body } = await agent
     .post(`${apiRoot}/password-rest`)
     .send({ email: "fakemail@mail.com" });
 
   expect(status).toBe(400);
   expect(spyMailService).toHaveBeenCalledTimes(0);
-  expect(body.status).toBe("error");
-  expect(body.message).toBe("nonexistent mail");
+
+  expect(body.error).toBe("nonexistent mail");
 });
 
 test("POST /password-rest 200 ", async () => {
@@ -155,8 +141,8 @@ test("POST /password-rest 200 ", async () => {
 
   await agent.post(`${apiRoot}/password-rest`).send({ email: testUser.email });
   expect(spyMailService).toHaveBeenCalled();
-
   const tokenId = stripParam(spyMailService.mock.lastCall[0]);
+
   const { status } = await agent
     .post(`${apiRoot}/password-rest/${tokenId}`)
     .send({ email: testUser.email, password: newPassword });
@@ -185,6 +171,7 @@ test("POST /password-rest 400 <malformed token> ", async () => {
 });
 
 test("POST /password-rest 400 <expired token> ", async () => {
+  // Fake current time to ensure token has expired
   Date.now = jest.fn(() => 1663667001958);
   const newPassword = "mynewpassword";
 

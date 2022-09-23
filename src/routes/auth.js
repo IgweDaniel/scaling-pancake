@@ -1,8 +1,9 @@
 import { Router } from "express";
 const route = Router();
 import { ErrorHandler } from "@/helpers/error";
-import { body, param, validationResult } from "express-validator";
+import { body, param } from "express-validator";
 import { AuthService, MailService } from "@/services/";
+import { validateInputs } from "@/middleware/validators";
 
 const cookieConfig = {
   httpOnly: true,
@@ -14,12 +15,8 @@ route.post(
   "/",
   body("loginId").isString(),
   body("password").isLength({ min: 5 }),
+  validateInputs,
   async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      throw new ErrorHandler(401, errors.array());
-    }
-
     const { token, refreshToken, user } = await AuthService.login(req.body);
     res.header("auth-token", token);
     res.cookie("refreshToken", refreshToken, cookieConfig);
@@ -38,13 +35,8 @@ route.delete("/", async (req, res) => {
 route.post(
   "/password-rest",
   body("email").isEmail(),
-
+  validateInputs,
   async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      throw new ErrorHandler(401, errors.array());
-    }
-
     const restLink = await AuthService.passwordResetLink(req.body.email);
 
     await MailService.forgotPasswordMail(restLink);
@@ -57,12 +49,8 @@ route.post(
   "/password-rest/:tokenId",
   param("tokenId").isString(),
   body("password").isLength({ min: 5 }),
+  validateInputs,
   async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      throw new ErrorHandler(401, errors.array());
-    }
-
     await AuthService.resetPassword({
       tokenId: req.params.tokenId,
       password: req.body.password,

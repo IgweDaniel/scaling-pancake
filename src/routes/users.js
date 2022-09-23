@@ -1,23 +1,19 @@
 import { Router } from "express";
 const route = Router();
 import { ErrorHandler } from "@/helpers/error";
-import { body, param, validationResult, query } from "express-validator";
+import { body, param, query } from "express-validator";
 import { AuthService, MailService, UserService } from "@/services/";
 import { hasRoles, verifyToken } from "@/middleware/auth";
 import { Roles } from "@/constants";
-import { validateClassId, validateUser } from "@/middleware/validators";
+import { validateInputs, validateUser } from "@/middleware/validators";
 
 route.use(verifyToken);
 route.get(
   "/",
-  query("role").optional().isIn(Object.values(Roles)),
   hasRoles([Roles.INSTRUCTOR, Roles.ADMIN]),
+  query("role").optional().isIn(Object.values(Roles)),
+  validateInputs,
   async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      throw new ErrorHandler(401, errors.array());
-    }
-
     const role = req.query.role;
 
     const filter = {
@@ -43,12 +39,8 @@ route.post(
   "/",
   hasRoles([Roles.ADMIN, Roles.INSTRUCTOR]),
   validateUser(),
+  validateInputs,
   async (req, res) => {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-      throw new ErrorHandler(401, errors.array());
-    }
     const deets = { ...req.body };
     if (req.user.role === Roles.INSTRUCTOR) {
       deets.role = Roles.STUDENT;
