@@ -11,6 +11,19 @@ class ExamService {
       createdBy: creatorId,
     });
   }
+  // for student
+  async listQuizes({ creatorId, classId }) {
+    return Quiz.find({
+      ...(creatorId && { createdBy: creatorId }),
+      ...(classId && { class: classId }),
+    });
+  }
+
+  async viewQuiz({ creatorId, classId }) {
+    /**
+     * get the quiz with Questions. if student dont show the question correctAnswers
+     */
+  }
   async createQuestion() {}
 }
 

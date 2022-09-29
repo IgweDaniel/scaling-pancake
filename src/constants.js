@@ -2,6 +2,7 @@ export const Roles = {
   ADMIN: "ADMIN",
   INSTRUCTOR: "INSTRUCTOR",
   STUDENT: "STUDENT",
+  ALL: ["ADMIN", "INSTRUCTOR", "STUDENT"],
 };
 
 export const TokenTypes = {

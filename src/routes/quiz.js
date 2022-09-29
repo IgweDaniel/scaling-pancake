@@ -28,4 +28,33 @@ route.post(
   }
 );
 
+route.get("/", hasRoles(Roles.ALL), async (req, res) => {
+  const filter = {};
+
+  if (req.user.role === Roles.STUDENT) {
+    filter.classId = req.user.classId;
+  } else if (req.user.role === Roles.INSTRUCTOR) {
+    filter.creatorId = req.user.id;
+  }
+  const quizes = await ExamService.listQuizes(filter);
+  return res.status(200).json({ quizes });
+});
+
+route.get(
+  "/:quizId",
+  param("quizId").isMongoId(),
+  hasRoles(Roles.ALL),
+  async (req, res) => {
+    const filter = {};
+
+    if (req.user.role === Roles.STUDENT) {
+      filter.classId = req.user.classId;
+    } else if (req.user.role === Roles.INSTRUCTOR) {
+      filter.creatorId = req.user.id;
+    }
+    const quizes = await ExamService.listQuizes(filter);
+    return res.status(200).json({ quizes });
+  }
+);
+
 export default route;

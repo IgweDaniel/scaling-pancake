@@ -16,11 +16,7 @@ let tokens, accounts, testClass;
 
 beforeEach(async () => {
   agent = request.agent(app);
-  testClass = await Class.create({
-    name: "JSS2",
-    code: 401,
-  });
-  accounts = await setupAccounts();
+  [accounts, testClass] = await setupAccounts();
   tokens = createAccountTokens(accounts);
 });
 
@@ -53,15 +49,23 @@ test("GET /users 200 (admin acess)", async () => {
 });
 
 test("GET /users 200 (admin acess) with role filter", async () => {
-  const { status, body } = await agent
+  let res = await agent
     .get(`${apiRoot}`)
     .query({ role: Roles.INSTRUCTOR })
     .set("auth-token", tokens.admin);
 
-  expect(status).toBe(200);
-  expect(body.users).toHaveLength(1);
+  expect(res.status).toBe(200);
+  expect(res.body.users).toHaveLength(1);
+  expect(res.body.users[0].loginId).toBe(accounts.instructor.loginId);
 
-  expect(body.users[0].loginId).toBe(accounts.instructor.loginId);
+  res = await agent
+    .get(`${apiRoot}`)
+    .query({ role: Roles.STUDENT })
+    .set("auth-token", tokens.admin);
+
+  expect(res.status).toBe(200);
+  expect(res.body.users).toHaveLength(1);
+  expect(res.body.users[0].loginId).toBe(accounts.student.loginId);
 });
 
 test("GET /users 200 (admin acess) with role filter <Bad Input>", async () => {

@@ -16,28 +16,32 @@ export const createToken = (user) => {
 
 export async function setupAccounts() {
   const password = hashPassword("mypassword");
-  const fakeClassId = new mongoose.Types.ObjectId();
+  const classDoc = await Class.create({
+    name: "JSS1",
+    code: 401,
+  });
 
   const [admin, instructor, student] = await User.insertMany([
     { loginId: "d@ad.com", email: "me@mail.com", role: Roles.ADMIN, password },
     {
       loginId: "d@ad.com",
       email: "kayode@mail.com",
-      class: fakeClassId,
+      class: classDoc.id,
       password,
       kind: Roles.INSTRUCTOR,
     },
     {
       loginId: "10100000",
       email: "student@mail.com",
-      class: fakeClassId,
+      class: classDoc.id,
       password,
       fullName: "adeola tunde",
       DOB: new Date(),
       kind: Roles.STUDENT,
     },
   ]);
-  return { admin, instructor, student };
+
+  return [{ admin, instructor, student }, classDoc];
 }
 
 export function createAccountTokens(accounts) {

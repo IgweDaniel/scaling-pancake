@@ -7,6 +7,7 @@ import hashPassword from "@/helpers/hashPassword";
 import { MailService } from "@/services";
 import { stripParam } from "@/helpers/stripParam";
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 
 const apiRoot = `${config.api.prefix}/auth`;
 const { app } = loaders({});
@@ -19,17 +20,17 @@ let agent;
 let testUser;
 const spyMailService = jest.spyOn(MailService, "forgotPasswordMail");
 
+// Test for existing user account creation proper handling
 beforeEach(async () => {
   agent = request.agent(app);
-  const userClass = await Class.create({
-    name: "jssq",
-    code: 403,
-  });
+
+  const fakeClassId = mongoose.Types.ObjectId();
+
   testUser = await User.create({
     ...creds,
     email: "me@mail.com",
     role: Roles.ADMIN,
-    class: userClass,
+    class: fakeClassId,
     password: hashPassword(creds.password),
   });
 });
@@ -61,7 +62,7 @@ test("POST /auth 401 <bad input>", async () => {
   expect(headers["auth-token"]).toBeFalsy();
 });
 
-test("POST /auth 401 <invalid password>", async () => {
+test("POST /auth 401 <Invalid credentials:password>", async () => {
   const { status, body, headers } = await agent
     .post(apiRoot)
     .send({ ...creds, password: "wrongpassword" });
@@ -73,7 +74,7 @@ test("POST /auth 401 <invalid password>", async () => {
   expect(headers["auth-token"]).toBeFalsy();
 });
 
-test("POST /auth 401 <invalid loginId>", async () => {
+test("POST /auth 401 <Invalid credentials:loginId>", async () => {
   const { status, body, headers } = await agent
     .post(apiRoot)
     .send({ ...creds, loginId: "invalid_loginId" });
