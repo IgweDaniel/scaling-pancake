@@ -60,7 +60,15 @@ const MultiChoiceQues = Question.discriminator(
 );
 const FillTheGapQues = Question.discriminator(
   QuestionTypes.FILL_THE_GAP,
-  new mongoose.Schema({}, { discriminatorKey })
+  new mongoose.Schema(
+    {
+      correctAnswer: {
+        type: String,
+        required: true,
+      },
+    },
+    { discriminatorKey }
+  )
 );
 
 const BooleanQues = Question.discriminator(
@@ -69,7 +77,7 @@ const BooleanQues = Question.discriminator(
     {
       options: { type: [String], required: true, default: ["true", "false"] },
       correctAnswer: {
-        type: Boolean,
+        type: String,
         required: true,
       },
     },

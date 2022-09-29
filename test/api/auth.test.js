@@ -21,10 +21,10 @@ let testUser;
 const spyMailService = jest.spyOn(MailService, "forgotPasswordMail");
 
 // Test for existing user account creation proper handling
+const fakeClassId = mongoose.Types.ObjectId();
+
 beforeEach(async () => {
   agent = request.agent(app);
-
-  const fakeClassId = mongoose.Types.ObjectId();
 
   testUser = await User.create({
     ...creds,
@@ -89,6 +89,7 @@ test("POST /auth 401 <Invalid credentials:loginId>", async () => {
 test("GET /refresh 200 ", async () => {
   await agent.post(apiRoot).send(creds);
   const { status, headers, body } = await agent.get(`${apiRoot}/refresh`);
+
   expect(status).toBe(200);
 
   expect(headers["auth-token"]).toBe(body.token);
