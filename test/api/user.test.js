@@ -17,6 +17,7 @@ let tokens, accounts, testClass;
 beforeEach(async () => {
   agent = request.agent(app);
   [accounts, testClass] = await setupAccounts();
+  
   tokens = createAccountTokens(accounts);
 });
 
@@ -158,3 +159,18 @@ test("POST /users/ 200 instructor creating student ", async () => {
   );
   expect(body.user.class).toBe(instructorClassId);
 });
+
+test("Update /users/ 200 admin updating student ", async()=>{
+  const updateInput = {
+    email: "updatedEmail@mail.com",
+    fullName: "updatedFullName",
+    DOB: new Date()
+  }
+  const {status, body} = await agent.
+  post(`${apiRoot}/updateUser/:${accounts.student.id}`)
+  .send(updateInput)
+  .set("auth-token", tokens.admin)
+
+  expect(status).toBe(404)
+
+})

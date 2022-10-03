@@ -40,7 +40,6 @@ export async function setupAccounts() {
       kind: Roles.STUDENT,
     },
   ]);
-
   return [{ admin, instructor, student }, classDoc];
 }
 

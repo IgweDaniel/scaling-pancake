@@ -53,4 +53,15 @@ route.post(
   }
 );
 
+route.put("/updateUser/:id", 
+body("fullname").isString(),
+body("email").isString(),
+body("DOB").isString(),
+validateInputs,
+async(req, res)=>{
+  // if(!req.cookies.token){
+  //   throw new ErrorHandler(401, "Token missing")
+  // }
+})
+
 export default route;
