@@ -64,4 +64,18 @@ async(req, res)=>{
   // }
 })
 
+route.patch(
+  "/update",
+  body("password").optional().isString(),
+  body("fullName").optional().isString(),
+  body("DOB").optional().isString(),
+  validateInputs,
+  async (req, res) => {
+    const id = req.user.id;
+    const kind = req.user.role
+    const updatedUser = await UserService.updateUser(id, req.body, kind);
+    return res.status(200).json(updatedUser);
+  }
+);
+
 export default route;

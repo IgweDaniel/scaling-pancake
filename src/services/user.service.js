@@ -22,11 +22,15 @@ class UserService {
     return user;
   }
 
-  async updateUser(id, { email, password }) {
-    const user = await User.findById(id);
-    if (!user) {
-      throw new ErrorHandler(404, "user not found");
+  async updateUser(id, toBeUpdated, kind) {
+    if(toBeUpdated.password){
+      toBeUpdated.password = hashPassword(toBeUpdated.password)
     }
+    const updatedUser = await User.findOneAndUpdate({_id: id, kind}, {$set: toBeUpdated}, {new: true})
+    if(updatedUser){
+      return updatedUser
+    }
+    throw new ErrorHandler(404, 'User not found')
   }
 
   async listUsers(filter) {

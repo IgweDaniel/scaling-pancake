@@ -6,6 +6,8 @@ const request = require("supertest");
 import { Roles } from "@/constants";
 import { createAccountTokens, setupAccounts, stringify } from "test/testUtils";
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
+
 
 const { app } = loaders({});
 
@@ -173,4 +175,39 @@ test("Update /users/ 200 admin updating student ", async()=>{
 
   expect(status).toBe(404)
 
+})
+
+test("PATCH /users/ 200 updating currently logged user <instance: student updating all fields> ", async()=>{
+  const updateInput = {
+    DOB: new Date(),
+    fullName: "updatedFullNameeeeeeeeeeeeeee",
+    password: "updatedPassword"
+  }
+  // student updating self
+  let userId = accounts.student.id
+  let response
+  const {body, status} = await agent.
+  patch(`${apiRoot}/update`)
+  .send(updateInput)
+  .set("auth-token", tokens.student)
+  expect(updateInput.fullName).toBe(body.fullName)
+  expect(bcrypt.compare(updateInput.password, body.password)).toBeTruthy()
+  expect(body.email).toBe(accounts.student.email)
+  expect(status).toBe(200)  
+})
+
+test("PATCH /users/ 200 updating currently logged user <instance: instructor updating a single field> ", async()=>{
+  const updateInput = {
+    password: "updatedPassword"
+  }
+  // student updating self
+  let userId = accounts.instructor.id
+  let response
+  const {body, status} = await agent.
+  patch(`${apiRoot}/update`)
+  .send(updateInput)
+  .set("auth-token", tokens.instructor)
+  expect(body.email).toBe(accounts.instructor.email)
+  expect(bcrypt.compare(updateInput.password, body.password)).toBeTruthy()
+  expect(status).toBe(200)  
 })
