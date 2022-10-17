@@ -53,20 +53,9 @@ route.post(
   }
 );
 
-route.put("/updateUser/:id", 
-body("fullname").isString(),
-body("email").isString(),
-body("DOB").isString(),
-validateInputs,
-async(req, res)=>{
-  // if(!req.cookies.token){
-  //   throw new ErrorHandler(401, "Token missing")
-  // }
-})
-
 route.patch(
   "/update",
-  body("password").optional().isString(),
+  body("password").optional().isString().isLength({min: 5}),
   body("fullName").optional().isString(),
   body("DOB").optional().isString(),
   validateInputs,
@@ -77,5 +66,16 @@ route.patch(
     return res.status(200).json(updatedUser);
   }
 );
+
+route.patch("/update/:id", 
+body("fullname").optional().isString(),
+body("password").optional().isString().isLength({min: 5}),
+body("DOB").optional().isString(),
+validateInputs,
+async(req, res)=>{
+  const id = req.params.id
+  const updatedUser = await UserService.updateUserById(id, req.user.id, req.body)
+  return res.status(200).json(updatedUser)
+})
 
 export default route;

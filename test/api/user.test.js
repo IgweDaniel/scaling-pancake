@@ -185,7 +185,6 @@ test("PATCH /users/ 200 updating currently logged user <instance: student updati
   }
   // student updating self
   let userId = accounts.student.id
-  let response
   const {body, status} = await agent.
   patch(`${apiRoot}/update`)
   .send(updateInput)
@@ -202,7 +201,6 @@ test("PATCH /users/ 200 updating currently logged user <instance: instructor upd
   }
   // student updating self
   let userId = accounts.instructor.id
-  let response
   const {body, status} = await agent.
   patch(`${apiRoot}/update`)
   .send(updateInput)
@@ -210,4 +208,29 @@ test("PATCH /users/ 200 updating currently logged user <instance: instructor upd
   expect(body.email).toBe(accounts.instructor.email)
   expect(bcrypt.compare(updateInput.password, body.password)).toBeTruthy()
   expect(status).toBe(200)  
+})
+
+test("PATCH /users 200 updating a user by id <Admin super access to update any user>", async()=>{
+  const updateInput = {
+    fullName: "updatedFullnameeee",
+    password: "updatedPassword",
+  }
+  const userId = accounts.student.id
+  const {body, status} = await agent.
+  patch(`${apiRoot}/update/${userId}`)
+  .send(updateInput)
+  .set("auth-token", tokens.admin)
+})
+
+test("PATCH /users 200 updating a user by id <Instructor updating a user of their class>", async()=>{
+  const updateInput = {
+    fullName: "updatedFullnameeee",
+    password: "updatedPassword"
+  }
+  const userId = accounts.student.id
+  const {body, status} = await agent.
+  patch(`${apiRoot}/update/${userId}`)
+  .send(updateInput)
+  .set("auth-token", tokens.instructor)
+  console.log(body, status, 'the result')
 })
