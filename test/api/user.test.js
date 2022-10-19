@@ -7,7 +7,7 @@ import { Roles } from "@/constants";
 import { createAccountTokens, setupAccounts, stringify } from "test/testUtils";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-
+import hashPassword from "@/helpers/hashPassword";
 
 const { app } = loaders({});
 
@@ -19,7 +19,7 @@ let tokens, accounts, testClass;
 beforeEach(async () => {
   agent = request.agent(app);
   [accounts, testClass] = await setupAccounts();
-  
+
   tokens = createAccountTokens(accounts);
 });
 
@@ -162,75 +162,110 @@ test("POST /users/ 200 instructor creating student ", async () => {
   expect(body.user.class).toBe(instructorClassId);
 });
 
-test("Update /users/ 200 admin updating student ", async()=>{
+test("Update /users/ 200 admin updating student ", async () => {
   const updateInput = {
     email: "updatedEmail@mail.com",
     fullName: "updatedFullName",
-    DOB: new Date()
-  }
-  const {status, body} = await agent.
-  post(`${apiRoot}/updateUser/:${accounts.student.id}`)
-  .send(updateInput)
-  .set("auth-token", tokens.admin)
+    DOB: new Date(),
+  };
+  const { status, body } = await agent
+    .post(`${apiRoot}/updateUser/:${accounts.student.id}`)
+    .send(updateInput)
+    .set("auth-token", tokens.admin);
 
-  expect(status).toBe(404)
+  expect(status).toBe(404);
+});
 
-})
-
-test("PATCH /users/ 200 updating currently logged user <instance: student updating all fields> ", async()=>{
+test("PATCH /users/ 200 updating currently logged user <instance: student updating all fields> ", async () => {
   const updateInput = {
     DOB: new Date(),
     fullName: "updatedFullNameeeeeeeeeeeeeee",
-    password: "updatedPassword"
-  }
+    password: "updatedPassword",
+  };
   // student updating self
-  let userId = accounts.student.id
-  const {body, status} = await agent.
-  patch(`${apiRoot}/update`)
-  .send(updateInput)
-  .set("auth-token", tokens.student)
-  expect(updateInput.fullName).toBe(body.fullName)
-  expect(bcrypt.compare(updateInput.password, body.password)).toBeTruthy()
-  expect(body.email).toBe(accounts.student.email)
-  expect(status).toBe(200)  
-})
+  let userId = accounts.student.id;
+  const { body, status } = await agent
+    .patch(`${apiRoot}/update`)
+    .send(updateInput)
+    .set("auth-token", tokens.student);
+  expect(updateInput.fullName).toBe(body.fullName);
+  expect(bcrypt.compare(updateInput.password, body.password)).toBeTruthy();
+  expect(body.email).toBe(accounts.student.email);
+  expect(status).toBe(200);
+});
 
-test("PATCH /users/ 200 updating currently logged user <instance: instructor updating a single field> ", async()=>{
+test("PATCH /users/ 200 updating currently logged user <instance: instructor updating a single field> ", async () => {
   const updateInput = {
-    password: "updatedPassword"
-  }
+    password: "updatedPassword",
+  };
   // student updating self
-  let userId = accounts.instructor.id
-  const {body, status} = await agent.
-  patch(`${apiRoot}/update`)
-  .send(updateInput)
-  .set("auth-token", tokens.instructor)
-  expect(body.email).toBe(accounts.instructor.email)
-  expect(bcrypt.compare(updateInput.password, body.password)).toBeTruthy()
-  expect(status).toBe(200)  
-})
+  let userId = accounts.instructor.id;
+  const { body, status } = await agent
+    .patch(`${apiRoot}/update`)
+    .send(updateInput)
+    .set("auth-token", tokens.instructor);
+  expect(body.email).toBe(accounts.instructor.email);
+  expect(bcrypt.compare(updateInput.password, body.password)).toBeTruthy();
+  expect(status).toBe(200);
+});
 
-test("PATCH /users 200 updating a user by id <Admin super access to update any user>", async()=>{
+test("PATCH /users 200 updating a user by id <Admin super access to update any user>", async () => {
   const updateInput = {
     fullName: "updatedFullnameeee",
     password: "updatedPassword",
-  }
-  const userId = accounts.student.id
-  const {body, status} = await agent.
-  patch(`${apiRoot}/update/${userId}`)
-  .send(updateInput)
-  .set("auth-token", tokens.admin)
-})
+  };
+  const userId = accounts.student.id;
+  const { body, status } = await agent
+    .patch(`${apiRoot}/update/${userId}`)
+    .send(updateInput)
+    .set("auth-token", tokens.admin);
+});
 
-test("PATCH /users 200 updating a user by id <Instructor updating a user of their class>", async()=>{
+test("PATCH /users 200 updating a user by id <Instructor updating a user of their class>", async () => {
   const updateInput = {
     fullName: "updatedFullnameeee",
-    password: "updatedPassword"
-  }
-  const userId = accounts.student.id
-  const {body, status} = await agent.
-  patch(`${apiRoot}/update/${userId}`)
-  .send(updateInput)
-  .set("auth-token", tokens.instructor)
-  console.log(body, status, 'the result')
-})
+    password: "updatedPassword",
+  };
+
+  const userId = accounts.student.id;
+  const { body, status } = await agent
+    .patch(`${apiRoot}/update/${userId}`)
+    .send(updateInput)
+    .set("auth-token", tokens.instructor);
+});
+
+describe("PATCH /users for other users", () => {
+  const classId = mongoose.Types.ObjectId();
+  let newIns;
+  let newTokens;
+  let newAccounts;
+
+  beforeAll(async () => {
+    const password = hashPassword("instructorpassword");
+    newIns = await User.create({
+      loginId: "newInstru@man.com",
+      email: "newInstructor@mail.com",
+      class: classId,
+      password,
+      kind: Roles.INSTRUCTOR,
+    });
+
+    newAccounts = { ...accounts, instructor2: newIns };
+    newTokens = createAccountTokens(newAccounts);
+  });
+
+  test("PATCH /users 403 updating a user by id <Instructor updating a user not in their class>", async () => {
+    const updateInput = {
+      fullName: "updatedFullnameeee",
+      password: "updatedPassword",
+    };
+
+    const userId = accounts.student.id;
+    const { body, status } = await agent
+      .patch(`${apiRoot}/update/${userId}`)
+      .send(updateInput)
+      .set("auth-token", newTokens.instructor2);
+      expect(status).toBe(403)
+      expect(body.error).toBe("Permission Denied")
+  });
+});

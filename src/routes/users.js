@@ -48,7 +48,6 @@ route.post(
     }
 
     const user = await UserService.createUser(deets);
-
     return res.status(200).json({ user });
   }
 );

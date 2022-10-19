@@ -42,7 +42,7 @@ class UserService {
     const authUser = await User.findById(authUserId)  // the auth user so i can compare their class with the toBeUpdated user's
     const kind = user.role
     if(authUser.role==Roles.ADMIN || authUser.class.toString() == user.class.toString()){
-      console.log('we are here', {authUserClass: authUser.class, userClass: user.class.toString()})
+      // console.log('we are here', {authUserClass: authUser.class, userClass: user.class.toString()})
       const updatedUser = await User.findOneAndUpdate({_id: id, kind}, {$set: toBeUpdated}, {new: true})
       return updatedUser
     }
