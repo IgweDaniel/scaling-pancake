@@ -34,19 +34,18 @@ class UserService {
     throw new ErrorHandler(404, 'User not found')
   }
 
-  async updateUserById(id, authUserId, toBeUpdated){
+  async updateUserById(id, authUser, toBeUpdated){
     if(toBeUpdated.password){
       toBeUpdated.password = hashPassword(toBeUpdated.password)
     }
     const user = await User.findById(id)  //the user to be updated so i can find the kind and class
-    const authUser = await User.findById(authUserId)  // the auth user so i can compare their class with the toBeUpdated user's
     const kind = user.role
-    if(authUser.role==Roles.ADMIN || authUser.class.toString() == user.class.toString()){
-      // console.log('we are here', {authUserClass: authUser.class, userClass: user.class.toString()})
-      const updatedUser = await User.findOneAndUpdate({_id: id, kind}, {$set: toBeUpdated}, {new: true})
-      return updatedUser
+    const canUpdate = (authUser.role===Roles.ADMIN || authUser.classId.toString() == user.class.toString() || authUser.id == user.id)
+    if(!canUpdate){
+      throw new ErrorHandler(403, 'Permission Denied')
     }
-    throw new ErrorHandler(403, 'Permission Denied')
+    const updatedUser = await User.findOneAndUpdate({_id: id, kind}, {$set: toBeUpdated}, {new: true})
+    return updatedUser
   }
 
   async listUsers(filter) {

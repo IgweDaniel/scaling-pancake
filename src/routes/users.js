@@ -73,7 +73,7 @@ body("DOB").optional().isString(),
 validateInputs,
 async(req, res)=>{
   const id = req.params.id
-  const updatedUser = await UserService.updateUserById(id, req.user.id, req.body)
+  const updatedUser = await UserService.updateUserById(id, req.user, req.body)
   return res.status(200).json(updatedUser)
 })
 
