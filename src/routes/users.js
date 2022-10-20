@@ -77,4 +77,10 @@ async(req, res)=>{
   return res.status(200).json(updatedUser)
 })
 
+route.delete("/:id", async(req, res)=>{
+  const id = req.params.id
+  const deletedMessage = await UserService.deleteUserById(id, req.user)
+  return res.status(200).json(deletedMessage)
+})
+
 export default route;

@@ -269,3 +269,51 @@ describe("PATCH /users for other users", () => {
       expect(body.error).toBe("Permission Denied")
   });
 });
+
+test("DELETE /users 200 deleting a user by the admin", async()=>{
+  const userId = accounts.instructor.id
+  const {body, status} = await agent
+  .delete(`${apiRoot}/${userId}`)
+  .set("auth-token", tokens.admin)
+  expect(status).toBe(200)
+  expect(body).toBe('User has been deleted')
+})
+
+test("DELETE /users 200 deleting a user by the instructor in the same class", async()=>{
+  const userId = accounts.student.id
+  const {body, status} = await agent
+  .delete(`${apiRoot}/${userId}`)
+  .set("auth-token", tokens.instructor)
+  expect(status).toBe(200)
+  expect(body).toBe('User has been deleted')
+})
+
+describe("DELETE /users deleting users by unauthorized user", () => {
+  const classId = mongoose.Types.ObjectId();
+  let newIns;
+  let newTokens;
+  let newAccounts;
+
+  beforeAll(async () => {
+    const password = hashPassword("instructorpassword");
+    newIns = await User.create({
+      loginId: "newInstru@man.com",
+      email: "newInstructor@mail.com",
+      class: classId,
+      password,
+      kind: Roles.INSTRUCTOR,
+    });
+
+    newAccounts = { ...accounts, instructor2: newIns };
+    newTokens = createAccountTokens(newAccounts);
+  });
+
+  test("DELETE /users 403 deleting a user by id <Instructor deleting a user not in their class>", async () => {
+    const userId = accounts.student.id;
+    const { body, status } = await agent
+      .delete(`${apiRoot}/${userId}`)
+      .set("auth-token", newTokens.instructor2);
+      expect(status).toBe(403)
+      expect(body.error).toBe("Permission Denied")
+  });
+});
