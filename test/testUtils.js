@@ -5,6 +5,8 @@ import { AuthService } from "@/services";
 import mongoose from "mongoose";
 
 export const stringify = JSON.stringify;
+const fakeInstructorsId = mongoose.Types.ObjectId();
+
 
 export const createToken = (user) => {
   return AuthService.signToken({
@@ -40,7 +42,6 @@ export async function setupAccounts() {
       kind: Roles.STUDENT,
     },
   ]);
-
   return [{ admin, instructor, student }, classDoc];
 }
 

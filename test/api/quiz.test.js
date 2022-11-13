@@ -1,9 +1,9 @@
 import jwt from "jsonwebtoken";
 import loaders from "@/loaders";
 import config from "@/config";
-import { User, Token, Class, Instructor, Student, Quiz } from "@/db";
+import { User, Token, Class, Instructor, Student, Quiz, Question } from "@/db";
 const request = require("supertest");
-import { Roles } from "@/constants";
+import { QuestionTypes, Roles } from "@/constants";
 import { createAccountTokens, setupAccounts, stringify } from "test/testUtils";
 import mongoose from "mongoose";
 
@@ -32,6 +32,24 @@ beforeEach(async () => {
     },
   ]);
 });
+
+async function createDummyQuiz({ creatorId = accounts.admin.id, classId }) {
+  const quiz = await Quiz.create({
+    createdBy: creatorId,
+    class: classId,
+    schedule: new Date(),
+  });
+
+  await Question.create({
+    quiz: quiz.id,
+    title:
+      "-------------  are words, morpheme, or phrases that means exactly or nearly the same as another word, morpheme, or phrase in a given language",
+    kind: QuestionTypes.FILL_THE_GAP,
+    correctAnswer: "synonyms",
+    creator: creatorId,
+  });
+  return quiz;
+}
 
 test("POST /quiz 200 (students acess)", async () => {
   const { status } = await agent
@@ -105,7 +123,7 @@ test("GET /quiz 200 (instructor acess)", async () => {
   expect(body.quizes[0].class).toBe(`${accounts.instructor.class}`);
 });
 
-test("GET /quiz 200 (admin acess)", async () => {
+test("GET /quizes 200 (admin acess)", async () => {
   const { status, body } = await agent
     .get(apiRoot)
     .set("auth-token", tokens.admin);
@@ -120,4 +138,80 @@ test("GET /quiz 200 (admin acess)", async () => {
   expect(JSON.stringify(body.quizes)).toMatch(
     `"createdBy":"${accounts.instructor.id}"`
   );
+});
+
+test("GET /quiz/:id 200 for student in same class with quiz class()", async () => {
+  const { status, body } = await agent
+    .get(`${apiRoot}/${testQuiz.id}`)
+    .set("auth-token", tokens.student);
+
+  expect(status).toBe(200);
+  expect(stringify(body.quiz.questions)).toEqual(
+    expect.not.stringMatching(new RegExp("answer", "i"))
+  );
+});
+
+test("GET /quiz/:id 404 for student in different class to quiz class()", async () => {
+  const dummyQuiz = await createDummyQuiz({
+    classId: mongoose.Types.ObjectId(),
+  });
+  const { status, body } = await agent
+    .get(`${apiRoot}/${dummyQuiz.id}`)
+    .set("auth-token", tokens.student);
+
+  expect(status).toBe(404);
+  expect(body.quiz).toBeFalsy();
+});
+
+test("GET /quiz/:id 200 for instructor who created quiz", async () => {
+  const dummyQuiz = await createDummyQuiz({
+    classId: mongoose.Types.ObjectId(),
+    creatorId: accounts.instructor.id,
+  });
+  const { status, body } = await agent
+    .get(`${apiRoot}/${dummyQuiz.id}`)
+    .set("auth-token", tokens.instructor);
+
+  expect(status).toBe(200);
+  expect(body.quiz.id).toBe(dummyQuiz.id);
+
+  expect(stringify(body.quiz.questions)).toEqual(
+    expect.stringMatching(new RegExp("answer", "i"))
+  );
+});
+
+test("GET /quiz/:id 404 for instructor access when not creator", async () => {
+  const dummyQuiz = await createDummyQuiz({
+    classId: mongoose.Types.ObjectId(),
+  });
+  const { status, body } = await agent
+    .get(`${apiRoot}/${dummyQuiz.id}`)
+    .set("auth-token", tokens.instructor);
+
+  expect(status).toBe(404);
+  expect(body.quiz).toBeFalsy();
+});
+
+test("GET /quiz/:id 200 for admin access", async () => {
+  const dummyQuiz = await createDummyQuiz({
+    classId: mongoose.Types.ObjectId(),
+  });
+  const { status, body } = await agent
+    .get(`${apiRoot}/${dummyQuiz.id}`)
+    .set("auth-token", tokens.admin);
+
+  expect(status).toBe(200);
+  expect(body.quiz.id).toBe(dummyQuiz.id);
+  expect(stringify(body.quiz.questions)).toEqual(
+    expect.stringMatching(new RegExp("answer", "i"))
+  );
+});
+
+test("GET /quiz/:id 404 for invalid quizId access", async () => {
+  const { status, body } = await agent
+    .get(`${apiRoot}/${mongoose.Types.ObjectId()}`)
+    .set("auth-token", tokens.admin);
+
+  expect(status).toBe(404);
+  expect(body.quiz).toBeFalsy();
 });

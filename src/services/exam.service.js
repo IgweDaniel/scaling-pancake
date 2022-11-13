@@ -4,6 +4,7 @@ import { Question, Quiz, User } from "@/db";
 
 import config from "@/config";
 import { QuestionTypes } from "@/constants";
+
 class ExamService {
   async createQuiz({ classId, schedule, creatorId }) {
     return Quiz.create({
@@ -20,10 +21,31 @@ class ExamService {
     });
   }
 
-  async viewQuiz({ creatorId, classId }) {
+  async viewQuiz({ quizId, creatorId, classId, omitAnswers }) {
     /**
      * get the quiz with Questions. if student dont show the question correctAnswers
      */
+    const quiz = await Quiz.findOne({
+      _id: quizId,
+      ...(creatorId && { createdBy: creatorId }),
+      ...(classId && { class: classId }),
+    });
+
+    if (!quiz) {
+      return null;
+    }
+    const questions = await Question.find(
+      { quiz: quizId },
+      { ...(omitAnswers && { correctAnswer: 0, correctAnswers: 0 }) }
+    );
+
+    return {
+      id: quiz.id,
+      classId: quiz.class,
+      createdBy: quiz.createdBy,
+      schedule: quiz.schedule,
+      questions,
+    };
   }
   async createQuestion({ quizId, title, kind, options, answers, creatorId }) {
     return Question.create({

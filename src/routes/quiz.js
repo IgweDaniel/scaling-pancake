@@ -45,15 +45,24 @@ route.get(
   param("quizId").isMongoId(),
   hasRoles(Roles.ALL),
   async (req, res) => {
-    const filter = {};
+    const filter = {
+      quizId: req.params.quizId,
+      omitAnswers: false,
+    };
 
-    // if (req.user.role === Roles.STUDENT) {
-    //   filter.classId = req.user.classId;
-    // } else if (req.user.role === Roles.INSTRUCTOR) {
-    //   filter.creatorId = req.user.id;
-    // }
-    // const quizes = await ExamService.listQuizes(filter);
-    return res.status(200).json({ quizes });
+    if (req.user.role === Roles.STUDENT) {
+      filter.classId = req.user.classId;
+      filter.omitAnswers = true;
+    } else if (req.user.role === Roles.INSTRUCTOR) {
+      filter.creatorId = req.user.id;
+    }
+
+    const quiz = await ExamService.viewQuiz(filter);
+    if (!quiz) {
+      return res.status(404).json({ quiz });
+    }
+
+    return res.status(200).json({ quiz });
   }
 );
 
