@@ -48,9 +48,39 @@ route.post(
     }
 
     const user = await UserService.createUser(deets);
-
     return res.status(200).json({ user });
   }
 );
+
+route.patch(
+  "/update",
+  body("password").optional().isString().isLength({min: 5}),
+  body("fullName").optional().isString(),
+  body("DOB").optional().isString(),
+  validateInputs,
+  async (req, res) => {
+    const id = req.user.id;
+    const kind = req.user.role
+    const updatedUser = await UserService.updateUser(id, req.body, kind);
+    return res.status(200).json(updatedUser);
+  }
+);
+
+route.patch("/update/:id", 
+body("fullname").optional().isString(),
+body("password").optional().isString().isLength({min: 5}),
+body("DOB").optional().isString(),
+validateInputs,
+async(req, res)=>{
+  const id = req.params.id
+  const updatedUser = await UserService.updateUserById(id, req.user, req.body)
+  return res.status(200).json(updatedUser)
+})
+
+route.delete("/:id", async(req, res)=>{
+  const id = req.params.id
+  const deletedMessage = await UserService.deleteUserById(id, req.user)
+  return res.status(200).json(deletedMessage)
+})
 
 export default route;
