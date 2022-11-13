@@ -6,12 +6,31 @@ import hashPassword from "@/helpers/hashPassword";
 
 class UserService {
   async createUser({ role, password, classId, ...rest }) {
-    return User.create({
-      ...rest,
-      kind: role,
-      class: classId,
-      password: hashPassword(password),
-    });
+    try {
+      return await User.create({
+        ...rest,
+        kind: role,
+        class: classId,
+        password: hashPassword(password),
+      });
+    } catch (error) {
+      if (error.code == "11000") {
+        const fieldErrorkeys = Object.keys(error.keyValue);
+        const errorStr = `${fieldErrorkeys[0]}:${
+          error.keyValue[fieldErrorkeys[0]]
+        }`;
+
+        let remstr = "";
+        fieldErrorkeys.splice(1).forEach((key) => {
+          remstr += `and ${key}:${error.keyValue[key]} `;
+        });
+
+        throw new ErrorHandler(401, `user with ${errorStr}${remstr} exist`);
+      }
+      console.log({ error });
+
+      throw error;
+    }
   }
 
   async getUserByLoginID(loginId) {

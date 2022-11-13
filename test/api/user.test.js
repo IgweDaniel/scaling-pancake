@@ -20,6 +20,24 @@ beforeEach(async () => {
   tokens = createAccountTokens(accounts);
 });
 
+test("MODEL /updating using BaseModel", async () => {
+  const userId = accounts.student.id;
+  const updates = { fullName: "danny test", DOB: new Date() };
+
+  const t = await User.findOneAndUpdate(
+    { _id: mongoose.Types.ObjectId(), kind: Roles.STUDENT },
+    {
+      $set: updates,
+    },
+    { new: true }
+  );
+  console.log({ t });
+
+  const newUser = await User.findById(userId);
+  console.log({ newUser });
+  expect(newUser.fullName).toBe(updates.fullName);
+});
+
 test("GET /users 401 (students acess)", async () => {
   const { status } = await agent
     .get(`${apiRoot}`)

@@ -6,7 +6,6 @@ const request = require("supertest");
 import { QuestionTypes, Roles } from "@/constants";
 import { createAccountTokens, setupAccounts, stringify } from "test/testUtils";
 import mongoose from "mongoose";
-import { restart } from "nodemon";
 
 const apiRoot = `${config.api.prefix}/questions`;
 const { app } = loaders({});
@@ -15,7 +14,7 @@ let agent;
 
 let tokens, accounts, testClass, testQuiz;
 
-beforeAll(async () => {
+beforeEach(async () => {
   agent = request.agent(app);
 
   [accounts, testClass] = await setupAccounts();
@@ -56,7 +55,7 @@ test("POST /quiz 401 (badInput acess for options required QuestionTypes)", async
   expect(body.error).toHaveProperty("options");
 });
 
-const cases = [
+let cases = [
   {
     title: "a woman is synonymous to which of the following",
     kind: QuestionTypes.MULTI_CHOICE,
