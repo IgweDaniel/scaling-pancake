@@ -1,9 +1,9 @@
 import jwt from "jsonwebtoken";
 import loaders from "@/loaders";
 import config from "@/config";
-import { User, Token, Class, Instructor, Student, Quiz } from "@/db";
+import { User, Token, Class, Instructor, Student, Quiz, Question } from "@/db";
 const request = require("supertest");
-import { Roles } from "@/constants";
+import { QuestionTypes, Roles } from "@/constants";
 import { createAccountTokens, setupAccounts, stringify } from "test/testUtils";
 import mongoose from "mongoose";
 
@@ -12,14 +12,14 @@ const { app } = loaders({});
 
 let agent;
 
-let tokens, accounts, testClass, testQuiz;
+let tokens, accounts, testClass, testQuiz, secondQuiz, questions;
 
 beforeEach(async () => {
   agent = request.agent(app);
 
   [accounts, testClass] = await setupAccounts();
   tokens = createAccountTokens(accounts);
-  [testQuiz] = await Quiz.insertMany([
+  [testQuiz, secondQuiz] = await Quiz.insertMany([
     {
       createdBy: accounts.instructor.id,
       class: testClass.id,
@@ -32,6 +32,7 @@ beforeEach(async () => {
     },
   ]);
 });
+
 
 test("POST /quiz 200 (students acess)", async () => {
   const { status } = await agent
@@ -120,4 +121,45 @@ test("GET /quiz 200 (admin acess)", async () => {
   expect(JSON.stringify(body.quizes)).toMatch(
     `"createdBy":"${accounts.instructor.id}"`
   );
+});
+
+describe("The Quiz/quizId access", () => {
+  beforeAll(async () => {
+    questions = await Question.insertMany([
+      {
+        title: "Do you have the HOLYSPIRIT?",
+        creator: accounts.instructor.id,
+        quiz: testQuiz.id,
+        kind: QuestionTypes.BOOLEAN,
+        options: ["true", "false"],
+        correctAnswer: "true",
+      },
+      {
+        title: "Which of the following is/are the friuts of the HOLYSPIRIT?",
+        creator: accounts.admin.id,
+        quiz: testQuiz.id,
+        kind: QuestionTypes.MULTI_CHOICE,
+        options: ["love", "patience", "money", "dancing"],
+        correctAnswers: ["love", "patience"],
+      },
+      {
+        title: "What is the capital of Nigeria",
+        creator: accounts.instructor.id,
+        quiz: secondQuiz.id,
+        kind: QuestionTypes.SINGLE_CHOICE,
+        options: ["Anambra", "Adamawa", "Abuja"],
+        correctAnswer: "Abuja",
+      },
+    ]);
+  });
+
+  test("GET /quiz/:quizId 200 (student access)", async () => {
+    const quizId = testQuiz._id;
+    const { status, body } = await agent
+    .get(`${apiRoot}/${quizId}`)
+    .set("auth-token", tokens.admin);
+
+    console.log('this is the body from the quiz test', body)
+    // console.log(testQuiz.createdBy.toString(), accounts.instructor.id, 'the test quiz')
+  });
 });

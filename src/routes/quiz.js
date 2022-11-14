@@ -45,15 +45,15 @@ route.get(
   param("quizId").isMongoId(),
   hasRoles(Roles.ALL),
   async (req, res) => {
-    const filter = {};
-
-    // if (req.user.role === Roles.STUDENT) {
-    //   filter.classId = req.user.classId;
-    // } else if (req.user.role === Roles.INSTRUCTOR) {
-    //   filter.creatorId = req.user.id;
-    // }
-    // const quizes = await ExamService.listQuizes(filter);
-    return res.status(200).json({ quizes });
+    // console.log('the ID check', req.params.quizId)
+    const filter = {quizId: req.params.quizId};
+    if(req.user.role===Roles.STUDENT){
+      filter.classId = req.user.classId
+    }else{
+      filter.creatorId = req.user.id
+    }
+    const quizes = await ExamService.viewQuiz(filter);
+    return res.status(200).json(quizes);
   }
 );
 

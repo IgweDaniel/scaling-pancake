@@ -20,10 +20,22 @@ class ExamService {
     });
   }
 
-  async viewQuiz({ creatorId, classId }) {
+  async viewQuiz({ creatorId, classId, quizId }) {
     /**
-     * get the quiz with Questions. if student dont show the question correctAnswers
+     * get the quiz with Questions. if student, dont show the question correctAnswers
      */
+    // const quiz = await Quiz.find({
+      
+    // })
+    const quiz = await Quiz.findOne({
+      _id: quizId
+      // ...(creatorId && {creator: creatorId}),
+      // ...(classId && {class: classId})
+    })
+    const quizQuestions = await Question.find({
+      // quiz: quizId
+    })
+    return quizQuestions
   }
   async createQuestion({ quizId, title, kind, options, answers, creatorId }) {
     return Question.create({

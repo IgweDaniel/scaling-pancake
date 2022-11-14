@@ -11,6 +11,11 @@ const questionSchema = new Schema(
       ref: "Quizes",
       required: true,
     },
+    //  class: {
+    //   type: Schema.Types.ObjectId,
+    //   ref: "Classes",
+    //   required: true,
+    // },
     creator: {
       type: Schema.Types.ObjectId,
       ref: "Users",
