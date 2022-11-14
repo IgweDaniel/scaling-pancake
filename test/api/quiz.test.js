@@ -33,6 +33,23 @@ beforeEach(async () => {
   ]);
 });
 
+async function createDummyQuiz({ creatorId = accounts.admin.id, classId }) {
+  const quiz = await Quiz.create({
+    createdBy: creatorId,
+    class: classId,
+    schedule: new Date(),
+  });
+
+  await Question.create({
+    quiz: quiz.id,
+    title:
+      "-------------  are words, morpheme, or phrases that means exactly or nearly the same as another word, morpheme, or phrase in a given language",
+    kind: QuestionTypes.FILL_THE_GAP,
+    correctAnswer: "synonyms",
+    creator: creatorId,
+  });
+  return quiz;
+}
 
 test("POST /quiz 200 (students acess)", async () => {
   const { status } = await agent
@@ -106,7 +123,7 @@ test("GET /quiz 200 (instructor acess)", async () => {
   expect(body.quizes[0].class).toBe(`${accounts.instructor.class}`);
 });
 
-test("GET /quiz 200 (admin acess)", async () => {
+test("GET /quizes 200 (admin acess)", async () => {
   const { status, body } = await agent
     .get(apiRoot)
     .set("auth-token", tokens.admin);
@@ -123,43 +140,78 @@ test("GET /quiz 200 (admin acess)", async () => {
   );
 });
 
-describe("The Quiz/quizId access", () => {
-  beforeAll(async () => {
-    questions = await Question.insertMany([
-      {
-        title: "Do you have the HOLYSPIRIT?",
-        creator: accounts.instructor.id,
-        quiz: testQuiz.id,
-        kind: QuestionTypes.BOOLEAN,
-        options: ["true", "false"],
-        correctAnswer: "true",
-      },
-      {
-        title: "Which of the following is/are the friuts of the HOLYSPIRIT?",
-        creator: accounts.admin.id,
-        quiz: testQuiz.id,
-        kind: QuestionTypes.MULTI_CHOICE,
-        options: ["love", "patience", "money", "dancing"],
-        correctAnswers: ["love", "patience"],
-      },
-      {
-        title: "What is the capital of Nigeria",
-        creator: accounts.instructor.id,
-        quiz: secondQuiz.id,
-        kind: QuestionTypes.SINGLE_CHOICE,
-        options: ["Anambra", "Adamawa", "Abuja"],
-        correctAnswer: "Abuja",
-      },
-    ]);
-  });
+test("GET /quiz/:id 200 for student in same class with quiz class()", async () => {
+  const { status, body } = await agent
+    .get(`${apiRoot}/${testQuiz.id}`)
+    .set("auth-token", tokens.student);
 
-  test("GET /quiz/:quizId 200 (student access)", async () => {
-    const quizId = testQuiz._id;
-    const { status, body } = await agent
-    .get(`${apiRoot}/${quizId}`)
+  expect(status).toBe(200);
+  expect(stringify(body.quiz.questions)).toEqual(
+    expect.not.stringMatching(new RegExp("answer", "i"))
+  );
+});
+
+test("GET /quiz/:id 404 for student in different class to quiz class()", async () => {
+  const dummyQuiz = await createDummyQuiz({
+    classId: mongoose.Types.ObjectId(),
+  });
+  const { status, body } = await agent
+    .get(`${apiRoot}/${dummyQuiz.id}`)
+    .set("auth-token", tokens.student);
+
+  expect(status).toBe(404);
+  expect(body.quiz).toBeFalsy();
+});
+
+test("GET /quiz/:id 200 for instructor who created quiz", async () => {
+  const dummyQuiz = await createDummyQuiz({
+    classId: mongoose.Types.ObjectId(),
+    creatorId: accounts.instructor.id,
+  });
+  const { status, body } = await agent
+    .get(`${apiRoot}/${dummyQuiz.id}`)
+    .set("auth-token", tokens.instructor);
+
+  expect(status).toBe(200);
+  expect(body.quiz.id).toBe(dummyQuiz.id);
+
+  expect(stringify(body.quiz.questions)).toEqual(
+    expect.stringMatching(new RegExp("answer", "i"))
+  );
+});
+
+test("GET /quiz/:id 404 for instructor access when not creator", async () => {
+  const dummyQuiz = await createDummyQuiz({
+    classId: mongoose.Types.ObjectId(),
+  });
+  const { status, body } = await agent
+    .get(`${apiRoot}/${dummyQuiz.id}`)
+    .set("auth-token", tokens.instructor);
+
+  expect(status).toBe(404);
+  expect(body.quiz).toBeFalsy();
+});
+
+test("GET /quiz/:id 200 for admin access", async () => {
+  const dummyQuiz = await createDummyQuiz({
+    classId: mongoose.Types.ObjectId(),
+  });
+  const { status, body } = await agent
+    .get(`${apiRoot}/${dummyQuiz.id}`)
     .set("auth-token", tokens.admin);
 
-    console.log('this is the body from the quiz test', body)
-    // console.log(testQuiz.createdBy.toString(), accounts.instructor.id, 'the test quiz')
-  });
+  expect(status).toBe(200);
+  expect(body.quiz.id).toBe(dummyQuiz.id);
+  expect(stringify(body.quiz.questions)).toEqual(
+    expect.stringMatching(new RegExp("answer", "i"))
+  );
+});
+
+test("GET /quiz/:id 404 for invalid quizId access", async () => {
+  const { status, body } = await agent
+    .get(`${apiRoot}/${mongoose.Types.ObjectId()}`)
+    .set("auth-token", tokens.admin);
+
+  expect(status).toBe(404);
+  expect(body.quiz).toBeFalsy();
 });

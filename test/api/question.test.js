@@ -6,7 +6,6 @@ const request = require("supertest");
 import { QuestionTypes, Roles } from "@/constants";
 import { createAccountTokens, setupAccounts, stringify } from "test/testUtils";
 import mongoose from "mongoose";
-import { restart } from "nodemon";
 
 const apiRoot = `${config.api.prefix}/questions`;
 const { app } = loaders({});
@@ -15,7 +14,7 @@ let agent;
 
 let tokens, accounts, testClass, testQuiz;
 
-beforeAll(async () => {
+beforeEach(async () => {
   agent = request.agent(app);
 
   [accounts, testClass] = await setupAccounts();
@@ -34,14 +33,14 @@ beforeAll(async () => {
   ]);
 });
 
-test("POST /quiz 200 (students acess)", async () => {
+test("POST /question 200 (students acess)", async () => {
   const { status } = await agent
     .post(`${apiRoot}`)
     .set("auth-token", tokens.student);
   expect(status).toBe(401);
 });
 
-test("POST /quiz 401 (badInput acess for options required QuestionTypes)", async () => {
+test("POST /question 401 (badInput acess for options required QuestionTypes)", async () => {
   const { status, body } = await agent
     .post(`${apiRoot}`)
     .set("auth-token", tokens.admin)
@@ -56,7 +55,8 @@ test("POST /quiz 401 (badInput acess for options required QuestionTypes)", async
   expect(body.error).toHaveProperty("options");
 });
 
-const cases = [
+// Test for multi question creation
+let cases = [
   {
     title: "a woman is synonymous to which of the following",
     kind: QuestionTypes.MULTI_CHOICE,
@@ -90,7 +90,7 @@ const cases = [
 ];
 
 test.each(cases)(
-  "POST /quiz 200 <$kind>",
+  "POST /questions 200 <$kind>",
   async ({ kind, hasOptions, ...rest }) => {
     const { status, body } = await agent
       .post(`${apiRoot}`)
