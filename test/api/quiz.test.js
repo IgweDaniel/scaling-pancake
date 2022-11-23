@@ -158,7 +158,6 @@ test("GET /quiz/:id 404 for student in different class to quiz class()", async (
   const { status, body } = await agent
     .get(`${apiRoot}/${dummyQuiz.id}`)
     .set("auth-token", tokens.student);
-
   expect(status).toBe(404);
   expect(body.quiz).toBeFalsy();
 });
@@ -171,7 +170,7 @@ test("GET /quiz/:id 200 for instructor who created quiz", async () => {
   const { status, body } = await agent
     .get(`${apiRoot}/${dummyQuiz.id}`)
     .set("auth-token", tokens.instructor);
-
+  
   expect(status).toBe(200);
   expect(body.quiz.id).toBe(dummyQuiz.id);
 
@@ -215,3 +214,83 @@ test("GET /quiz/:id 404 for invalid quizId access", async () => {
   expect(status).toBe(404);
   expect(body.quiz).toBeFalsy();
 });
+
+
+test("DELETE /quiz/:id 404 for student access", async()=>{
+  const dummyQuiz = await createDummyQuiz({
+    classId: mongoose.Types.ObjectId(),
+  })
+  const {status, body} = await agent
+     .delete(`${apiRoot}/${dummyQuiz.id}`)
+     .set("auth-token", tokens.student)
+  expect(status).toBe(401)
+})
+
+test("DELETE /quiz/:id 404 for unauthorized creator access", async()=>{
+  const dummyQuiz = await createDummyQuiz({
+    classId: mongoose.Types.ObjectId(),
+  })
+  const {status, body} = await agent
+     .delete(`${apiRoot}/${dummyQuiz.id}`)
+     .set("auth-token", tokens.instructor)
+  expect(status).toBe(401)
+})
+
+test("DELETE /quiz/:id 200 for instructor access", async()=>{
+  const dummyQuiz = await createDummyQuiz({
+    classId: mongoose.Types.ObjectId(),
+    creatorId: accounts.instructor.id
+  })
+  const {status, body} = await agent
+     .delete(`${apiRoot}/${dummyQuiz.id}`)
+     .set("auth-token", tokens.instructor)
+  expect(status).toBe(200)
+  expect(body).toBe('Quiz deleted')
+})
+
+test("UPDATE /quiz/:id 401 for student access", async()=>{
+  const dummyQuiz = await createDummyQuiz({
+    classId: mongoose.Types.ObjectId(),
+  })
+  const updatedBody = {
+    class: mongoose.Types.ObjectId(),
+    name: 'promise'
+  }
+  const {status, body} = await agent
+     .put(`${apiRoot}/${dummyQuiz.id}`)
+     .send(updatedBody)
+     .set("auth-token", tokens.student)
+  expect(status).toBe(401)
+})
+
+test("UPDATE /quiz/:id 401 for instructor access", async()=>{
+  const dummyQuiz = await createDummyQuiz({
+    classId: mongoose.Types.ObjectId(),
+  })
+  const updatedBody = {
+    class: mongoose.Types.ObjectId(),
+    schedule: new Date()
+  }
+  const {status, body} = await agent
+     .put(`${apiRoot}/${dummyQuiz.id}`)
+     .send(updatedBody)
+     .set("auth-token", tokens.instructor)
+  expect(status).toBe(401)
+})
+
+test("UPDATE /quiz/:id 200 for instructor access", async()=>{
+  const dummyQuiz = await createDummyQuiz({
+    classId: mongoose.Types.ObjectId(),
+    creatorId: accounts.instructor.id
+  })
+  const updatedBody = {
+    class: mongoose.Types.ObjectId(),
+    schedule: new Date()
+  }
+  const {status, body} = await agent
+     .put(`${apiRoot}/${dummyQuiz.id}`)
+     .send(updatedBody)
+     .set("auth-token", tokens.instructor)
+  expect(status).toBe(200)
+  expect(body.class).toBe(dummyQuiz.class.toString())
+})

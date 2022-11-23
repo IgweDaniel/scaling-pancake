@@ -66,4 +66,44 @@ route.get(
   }
 );
 
+
+route.put(
+  "/:quizId",
+  param("quizId").isMongoId(),
+  hasRoles([Roles.ADMIN, Roles.INSTRUCTOR]),
+  async(req, res)=>{
+    const {class: classId, ...others} = req.body
+    const quizId = req.params.quizId
+    const creatorId = req.user.id
+    let updatedBody = {}
+    if(req.user.role==Roles.INSTRUCTOR){
+      updatedBody = {...others}
+    }else{
+      updatedBody = {...req.body}
+    }
+    const updatedQuiz = await ExamService.updateQuizById(quizId, creatorId, updatedBody)
+    if(!updatedQuiz){
+      return res.status(401).json('You are not permitted')
+    }
+    return res.status(200).json(updatedQuiz)
+  }
+  )
+route.delete(
+  "/:quizId",
+  param("quizId").isMongoId(),
+  hasRoles([Roles.ADMIN, Roles.INSTRUCTOR]),
+  async(req, res)=>{
+    const filter = {
+      quizId: req.params.quizId,
+      creatorId: req.user.id
+    }
+    const deletedQuiz = await ExamService.deleteQuiz(filter)
+    if(deletedQuiz){
+      return res.status(200).json('Quiz deleted')
+    }else{
+      return res.status(401).json('You are not allowed')
+    }
+  }
+  )
+
 export default route;

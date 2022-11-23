@@ -59,6 +59,19 @@ class ExamService {
         : { correctAnswers: answers }),
     });
   }
+  async updateQuizById(quizId, creatorId, updatedBody){
+    const updatedQuiz = await Quiz.findOneAndUpdate({_id: quizId, createdBy: creatorId}, {$set: updatedBody}, {new: true})
+    return updatedQuiz
+  }
+  async deleteQuiz({quizId, creatorId}){
+    const deletedQuiz = await Quiz.findOneAndDelete({_id: quizId, createdBy: creatorId})
+    if(deletedQuiz){
+      const questions = await Question.deleteMany({quiz: quizId})
+      return deletedQuiz
+    }
+    // return 'Quiz Deleted'
+    return null
+  }
 }
 
 export default new ExamService();
